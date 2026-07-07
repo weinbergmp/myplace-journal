@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}Calendar — {{ month_name }} {{ year }}{% endblock %}
+
+{% block content %}
+<h2 class="page-heading">Calendar</h2>
+
+<div class="cal-nav">
+  <a href="{{ url_for('main.calendar_view', year=prev_year, month=prev_month) }}" class="pag-link">&laquo; {{ prev_month }}/{{ prev_year }}</a>
+  <strong class="cal-month-title">{{ month_name }} {{ year }}</strong>
+  {% if not (next_year > today.year or (next_year == today.year and next_month > today.month)) %}
+  <a href="{{ url_for('main.calendar_view', year=next_year, month=next_month) }}" class="pag-link">{{ next_month }}/{{ next_year }} &raquo;</a>
+  {% else %}
+  <span class="pag-link disabled">{{ next_month }}/{{ next_year }} &raquo;</span>
+  {% endif %}
+</div>
+
+<table class="full-cal">
+  <thead>
+    <tr>
+      {% for name in ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'] %}
+      <th>{{ name }}</th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for week in weeks %}
+    <tr>
+      {% for day in week %}
+      <td class="cal-day{% if day == 0 %} cal-empty{% elif day == today.day and year == today.year and month == today.month %} cal-today{% endif %}">
+        {% if day != 0 %}
+        {% if day in entries_by_day %}
+        <div class="cal-day-num" id="day-{{ day }}"><strong>{{ day }}</strong></div>
+        {% for e in entries_by_day[day] %}
+        <div class="cal-entry">
+          <a href="{{ url_for('main.entry', entry_id=e.id) }}">
+            {% if e.subject %}{{ e.subject }}{% else %}(untitled){% endif %}
+          </a>
+          {% if e.is_private %}<span class="lock-icon" title="Private">&#128274;</span>{% endif %}
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="cal-day-num">{{ day }}</div>
+        {% endif %}
+        {% endif %}
+      </td>
+      {% endfor %}
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="cal-nav" style="margin-top:8px;">
+  <a href="{{ url_for('main.archive') }}" class="pag-link">View full archive &raquo;</a>
+</div>
+{% endblock %}

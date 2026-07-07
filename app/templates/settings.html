@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block title %}Settings{% endblock %}
+
+{% block head %}
+<style>
+  .settings-group { margin-bottom: 18px; }
+  .settings-group-title {
+    font-size: 13px; font-weight: bold; margin-bottom: 5px;
+    font-family: Verdana, sans-serif; color: var(--header-bg);
+    padding-bottom: 3px; border-bottom: 1px solid var(--border-color);
+  }
+  .settings-hint {
+    font-size: 11px; color: var(--small-text); margin-bottom: 8px;
+    line-height: 1.6; font-family: Verdana, sans-serif;
+  }
+  .settings-hint code {
+    background: var(--code-bg); border: 1px solid var(--code-border);
+    padding: 1px 3px; font-size: 11px; font-family: 'Courier New', monospace;
+  }
+  .settings-divider { border: none; border-top: 1px solid var(--border-color); margin: 14px 0; }
+
+  /* Theme swatches */
+  .theme-options { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .theme-radio { display: flex; align-items: center; gap: 5px; cursor: pointer; font-family: Verdana, sans-serif; font-size: 11px; }
+  .theme-radio input[type="radio"] { cursor: pointer; }
+  .theme-swatch {
+    padding: 3px 9px; border: 2px solid transparent; border-radius: 2px;
+    font-size: 11px; font-family: Verdana, sans-serif;
+  }
+  .theme-radio input:checked + .theme-swatch { border-color: var(--link-color); }
+  .theme-swatch-dystopia { background: #99badd; color: #2d4f7c; }
+  .theme-swatch-midnight { background: #1c1c30; color: #b8c8e8; }
+  .theme-swatch-forest   { background: #c0d8a8; color: #285c22; }
+  .theme-swatch-crimson  { background: #cca8a8; color: #7a1818; }
+  .theme-swatch-vintage  { background: #e0cc98; color: #7a4818; }
+
+  /* CSS editor */
+  .css-editor-wrap { position: relative; }
+  .css-editor {
+    width: 100%; min-height: 380px; box-sizing: border-box;
+    font-family: 'Courier New', Courier, monospace; font-size: 12px;
+    background: #1e1e1e; color: #d4d4d4;
+    border: 1px solid #444; padding: 10px 12px;
+    resize: vertical; line-height: 1.65;
+    tab-size: 2; -moz-tab-size: 2;
+    caret-color: #d4d4d4;
+  }
+  .css-editor::placeholder { color: #555; }
+  .css-editor:focus { outline: none; border-color: #888; }
+  .css-editor-hint {
+    font-size: 10px; color: var(--small-text); margin-top: 4px;
+    font-family: Verdana, sans-serif;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<h2 class="page-heading">Settings</h2>
+
+<div class="entry">
+  <div class="entry-header">
+    <span class="entry-date">Journal Customisation</span>
+  </div>
+  <div class="entry-body">
+    <form method="post" class="lj-form" novalidate>
+      {{ form.hidden_tag() }}
+
+      <!-- Theme -->
+      <div class="settings-group">
+        <h3 class="settings-group-title">Theme</h3>
+        <p class="settings-hint">Choose a colour scheme. Changes apply instantly — no save needed.</p>
+        <div class="theme-options" id="theme-options">
+          {% for subfield in form.theme %}
+          <label class="theme-radio">
+            {{ subfield(onchange="previewTheme('" + subfield.data + "')") }}
+            <span class="theme-swatch theme-swatch-{{ subfield.data }}">{{ subfield.label.text }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="settings-divider"></div>
+
+      <!-- Custom CSS -->
+      <div class="settings-group">
+        <h3 class="settings-group-title">Custom CSS</h3>
+        <p class="settings-hint">
+          Write any valid CSS here. It is injected into every page after all theme styles,
+          so it overrides everything. Use it to tweak colours, fonts, spacing, backgrounds,
+          or anything else.<br><br>
+          Quick reference — the key CSS variables you can override:
+        </p>
+        <table class="form-table" style="margin-bottom:10px;font-size:11px;">
+          <tr><td style="padding:1px 10px 1px 0;"><code>--header-bg</code></td><td style="color:var(--small-text);">top header background</td></tr>
+          <tr><td style="padding:1px 10px 1px 0;"><code>--nav-bg</code></td><td style="color:var(--small-text);">navigation bar</td></tr>
+          <tr><td style="padding:1px 10px 1px 0;"><code>--page-bg</code></td><td style="color:var(--small-text);">page background</td></tr>
+          <tr><td style="padding:1px 10px 1px 0;"><code>--entry-header-bg</code></td><td style="color:var(--small-text);">entry date-bar colour</td></tr>
+          <tr><td style="padding:1px 10px 1px 0;"><code>--sidebar-bg</code></td><td style="color:var(--small-text);">sidebar background</td></tr>
+          <tr><td style="padding:1px 10px 1px 0;"><code>--content-bg</code></td><td style="color:var(--small-text);">main content background</td></tr>
+          <tr><td style="padding:1px 10px 1px 0;"><code>--link-color</code></td><td style="color:var(--small-text);">link colour</td></tr>
+          <tr><td style="padding:1px 10px 1px 0;"><code>--text-color</code></td><td style="color:var(--small-text);">body text colour</td></tr>
+        </table>
+        <div class="css-editor-wrap">
+          {{ form.custom_css(
+              id='custom_css',
+              class='css-editor',
+              placeholder='/* Your custom CSS here */\n\n/* Example: purple entry headers */\n.entry-header { background: #6a1b9a; }\n\n/* Example: override a CSS variable for just one element */\n:root { --page-bg: #f0e8ff; }',
+              spellcheck='false',
+              autocomplete='off',
+              autocorrect='off',
+              autocapitalize='off'
+          ) }}
+        </div>
+        <p class="css-editor-hint">
+          Saved CSS is applied to all pages immediately — no browser reload needed after saving.
+        </p>
+        {% if form.custom_css.errors %}
+        <span class="field-error">{{ form.custom_css.errors[0] }}</span>
+        {% endif %}
+      </div>
+
+      <div class="form-submit-row">
+        {{ form.submit(class='lj-btn') }}
+        <a href="{{ url_for('main.index') }}" class="cancel-link">Back to journal</a>
+      </div>
+
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}{% endblock %}

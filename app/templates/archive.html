@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}Archive{% endblock %}
+
+{% block content %}
+<h2 class="page-heading">Archive</h2>
+
+{% if archive_data %}
+{% for year, months in archive_data.items() %}
+<div class="archive-year">
+  <h3 class="archive-year-heading">{{ year }}</h3>
+  <table class="archive-table">
+    {% for month_num, month_name, count in months %}
+    <tr>
+      <td class="archive-month">
+        <a href="{{ url_for('main.calendar_view', year=year, month=month_num) }}">{{ month_name }}</a>
+      </td>
+      <td class="archive-count">{{ count }} {{ 'entry' if count == 1 else 'entries' }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endfor %}
+{% else %}
+<div class="entry">
+  <div class="entry-body"><p>No entries yet.</p></div>
+</div>
+{% endif %}
+{% endblock %}

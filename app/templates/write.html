@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if edit_mode %}Edit Entry{% else %}New Entry{% endif %}{% endblock %}
+
+{% block head %}
+<style>
+  .write-layout { display: flex; gap: 0; border: 1px solid var(--border-color); }
+  .write-pane { flex: 1; display: flex; flex-direction: column; }
+  .write-pane + .write-pane { border-left: 1px solid var(--border-color); }
+  .pane-label {
+    background: var(--entry-header-bg); color: #fff;
+    padding: 3px 8px; font-size: 11px; font-family: Verdana, sans-serif;
+    font-weight: bold;
+  }
+  #body {
+    width: 100%; flex: 1; min-height: 280px; box-sizing: border-box;
+    resize: vertical; font-family: monospace; font-size: 13px;
+    border: none; padding: 8px; outline: none;
+  }
+  #preview-pane {
+    flex: 1; min-height: 280px; padding: 8px; overflow-y: auto;
+    font-family: Georgia, 'Times New Roman', serif; font-size: 13px;
+    line-height: 1.5; background: #fafbfd; color: var(--text-color);
+  }
+  #preview-pane.placeholder { color: #999; font-style: italic; font-family: Verdana, sans-serif; font-size: 12px; }
+
+  /* Mobile: hide preview pane; show tab buttons */
+  .mobile-tabs { display: none; margin-bottom: 0; }
+  @media (max-width: 640px) {
+    .write-layout { flex-direction: column; }
+    .write-pane + .write-pane { border-left: none; border-top: 1px solid var(--border-color); }
+    .mobile-tabs { display: flex; gap: 4px; margin-bottom: 4px; }
+    .tab-btn {
+      padding: 4px 14px; cursor: pointer; font-size: 12px; font-family: Verdana, sans-serif;
+      background: var(--sidebar-bg); border: 1px solid var(--border-color);
+      border-bottom: none; color: var(--link-color);
+    }
+    .tab-btn.active { background: #fff; color: var(--text-color); font-weight: bold; }
+    .write-pane.hidden { display: none; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<h2 class="page-heading">{% if edit_mode %}Edit Entry{% else %}Update Journal{% endif %}</h2>
+
+<form method="post" class="lj-form" novalidate>
+  {{ form.hidden_tag() }}
+
+  <table class="form-table">
+    <tr>
+      <th><label for="subject">Subject</label></th>
+      <td>{{ form.subject(id='subject', class='form-input form-input-full', placeholder='(optional)') }}
+        {% if form.subject.errors %}<span class="field-error">{{ form.subject.errors[0] }}</span>{% endif %}
+      </td>
+    </tr>
+    <tr>
+      <th><label for="security">Security</label></th>
+      <td>{{ form.security(id='security', class='form-select') }}</td>
+    </tr>
+  </table>
+
+  <!-- Editor + preview -->
+  <div class="mobile-tabs">
+    <button type="button" class="tab-btn active" id="tab-write" onclick="showTab('write')">Write</button>
+    <button type="button" class="tab-btn" id="tab-preview" onclick="showTab('preview')">Preview</button>
+  </div>
+
+  <div class="write-layout">
+    <div class="write-pane" id="pane-write">
+      <div class="pane-label">Markdown</div>
+      {{ form.body(id='body', placeholder='Write your entry here using Markdown…') }}
+      {% if form.body.errors %}
+      <span class="field-error" style="padding:4px 8px;">{{ form.body.errors[0] }}</span>
+      {% endif %}
+    </div>
+    <div class="write-pane" id="pane-preview">
+      <div class="pane-label">Preview</div>
+      <div id="preview-pane" class="placeholder">Preview will appear here…</div>
+    </div>
+  </div>
+
+  <table class="form-table" style="margin-top:8px;">
+    <tr>
+      <th><label for="mood">Mood</label></th>
+      <td>{{ form.mood(id='mood', class='form-input', placeholder='e.g. happy, tired, excited') }}</td>
+      <th><label for="current_music">Music</label></th>
+      <td>{{ form.current_music(id='current_music', class='form-input', placeholder='Artist — Song') }}</td>
+    </tr>
+    <tr>
+      <th><label for="tags">Tags</label></th>
+      <td colspan="3">
+        {{ form.tags(id='tags', class='form-input form-input-full', placeholder='life, travel, coding') }}
+        <span class="field-hint">{{ form.tags.description }}</span>
+      </td>
+    </tr>
+  </table>
+
+  <div class="form-submit-row">
+    {{ form.submit(class='lj-btn') }}
+    {% if edit_mode and entry %}
+    <a href="{{ url_for('main.entry', entry_id=entry.id) }}" class="cancel-link">Cancel</a>
+    {% else %}
+    <a href="{{ url_for('main.index') }}" class="cancel-link">Cancel</a>
+    {% endif %}
+  </div>
+
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+  const bodyEl = document.getElementById('body');
+  const previewEl = document.getElementById('preview-pane');
+
+  function updatePreview() {
+    const md = bodyEl.value.trim();
+    if (md) {
+      previewEl.classList.remove('placeholder');
+      previewEl.innerHTML = marked.parse(md);
+    } else {
+      previewEl.classList.add('placeholder');
+      previewEl.innerHTML = 'Preview will appear here\u2026';
+    }
+  }
+
+  bodyEl.addEventListener('input', updatePreview);
+  updatePreview();
+
+  // Mobile tab toggle
+  function showTab(which) {
+    const writePane = document.getElementById('pane-write');
+    const previewPane = document.getElementById('pane-preview');
+    const tabWrite = document.getElementById('tab-write');
+    const tabPreview = document.getElementById('tab-preview');
+    if (which === 'write') {
+      writePane.classList.remove('hidden');
+      previewPane.classList.add('hidden');
+      tabWrite.classList.add('active');
+      tabPreview.classList.remove('active');
+      updatePreview();
+    } else {
+      updatePreview();
+      writePane.classList.add('hidden');
+      previewPane.classList.remove('hidden');
+      tabPreview.classList.add('active');
+      tabWrite.classList.remove('active');
+    }
+  }
+</script>
+{% endblock %}

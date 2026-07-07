@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import entry_card with context %}
+
+{% block title %}{% if entry.subject %}{{ entry.subject }}{% else %}Entry #{{ entry.id }}{% endif %}{% endblock %}
+
+{% block content %}
+{{ entry_card(entry, full_body=True) }}
+
+<div class="entry-nav">
+  {% if next_entry %}
+  <a href="{{ url_for('main.entry', entry_id=next_entry.id) }}" class="pag-link">&laquo; Previous entry</a>
+  {% endif %}
+  {% if next_entry and prev_entry %}
+  <span class="pag-sep">|</span>
+  {% endif %}
+  {% if prev_entry %}
+  <a href="{{ url_for('main.entry', entry_id=prev_entry.id) }}" class="pag-link">Next entry &raquo;</a>
+  {% endif %}
+</div>
+{% endblock %}

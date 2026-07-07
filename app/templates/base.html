@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ config.JOURNAL_TITLE }}{% endblock %} — {{ config.JOURNAL_OWNER }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  {% if custom_css %}<style>{{ custom_css }}</style>{% endif %}
+  {% block head %}{% endblock %}
+</head>
+<body{% if site_theme and site_theme != 'dystopia' %} class="theme-{{ site_theme }}"{% endif %}>
+<script>
+/* Instant theme preview on the settings page (no persistence — Save button does that). */
+function previewTheme(name) {
+  var b = document.body;
+  b.className = b.className.replace(/\btheme-\S+/g, '').trim();
+  if (name && name !== 'dystopia') b.classList.add('theme-' + name);
+}
+</script>
+<div id="wrapper">
+
+  <!-- ===== HEADER ===== -->
+  <div id="header">
+    <div id="header-inner">
+      <span id="journal-owner">{{ config.JOURNAL_OWNER }}</span>
+      <h1 id="journal-title"><a href="{{ url_for('main.index') }}">{{ config.JOURNAL_TITLE }}</a></h1>
+      {% if config.JOURNAL_SUBTITLE %}
+      <p id="journal-subtitle">{{ config.JOURNAL_SUBTITLE }}</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ===== NAVIGATION ===== -->
+  <nav id="nav" aria-label="Main navigation">
+    <a href="{{ url_for('main.index') }}"{% if request.endpoint == 'main.index' %} class="active"{% endif %}>Recent Entries</a>
+    <a href="{{ url_for('main.userinfo') }}"{% if request.endpoint == 'main.userinfo' %} class="active"{% endif %}>User Info</a>
+    <a href="{{ url_for('main.archive') }}"{% if request.endpoint == 'main.archive' %} class="active"{% endif %}>Archive</a>
+    <a href="{{ url_for('main.calendar_view') }}"{% if request.endpoint == 'main.calendar_view' %} class="active"{% endif %}>Calendar</a>
+    {% if current_user.is_authenticated %}
+    <a href="{{ url_for('main.write') }}"{% if request.endpoint == 'main.write' %} class="active"{% endif %}>Update Journal</a>
+    <a href="{{ url_for('main.settings') }}"{% if request.endpoint == 'main.settings' %} class="active"{% endif %}>Settings</a>
+    <a href="{{ url_for('main.logout') }}">Log Out</a>
+    {% else %}
+    <a href="{{ url_for('main.login') }}"{% if request.endpoint == 'main.login' %} class="active"{% endif %}>Log In</a>
+    {% endif %}
+  </nav>
+
+  <!-- ===== FLASH MESSAGES ===== -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div id="flash-container">
+    {% for category, message in messages %}
+    <div class="flash flash-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endwith %}
+
+  <!-- ===== TWO-COLUMN LAYOUT ===== -->
+  <div id="content-wrapper">
+
+    <!-- Main content (order 1 on mobile so it appears above sidebar) -->
+    <div id="main">
+      {% block content %}{% endblock %}
+    </div>
+
+    <!-- Sidebar (order 2 on mobile so it appears below content) -->
+    <aside id="sidebar">
+
+      <!-- Userpic + username -->
+      <div class="sidebar-section sidebar-user">
+        <div id="userpic">
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-label="User avatar">
+            <rect width="100" height="100" fill="#8c9fc0"/>
+            <circle cx="50" cy="36" r="22" fill="#c8d8f0"/>
+            <ellipse cx="50" cy="90" rx="34" ry="26" fill="#c8d8f0"/>
+          </svg>
+        </div>
+        <div id="sidebar-username">
+          <strong>{{ config.JOURNAL_OWNER }}</strong>
+        </div>
+      </div>
+
+      <!-- Navigation -->
+      <div class="sidebar-section">
+        <div class="sidebar-header">Navigation</div>
+        <ul class="sidebar-nav">
+          <li><a href="{{ url_for('main.index') }}">Recent Entries</a></li>
+          <li><a href="{{ url_for('main.calendar_view') }}">Calendar</a></li>
+          <li><a href="{{ url_for('main.archive') }}">Archive</a></li>
+          <li><a href="{{ url_for('main.userinfo') }}">User Info</a></li>
+          {% if current_user.is_authenticated %}
+          <li><a href="{{ url_for('main.write') }}">Post Entry</a></li>
+          <li><a href="{{ url_for('main.settings') }}">Settings</a></li>
+          <li><a href="{{ url_for('main.logout') }}">Log Out</a></li>
+          {% else %}
+          <li><a href="{{ url_for('main.login') }}">Log In</a></li>
+          {% endif %}
+        </ul>
+      </div>
+
+      <!-- Mini calendar -->
+      <div class="sidebar-section">
+        <div class="sidebar-header">
+          <a href="{{ url_for('main.calendar_view', year=sidebar_year, month=sidebar_month) }}">{{ sidebar_month_name }} {{ sidebar_year }}</a>
+        </div>
+        <table class="mini-cal" role="grid" aria-label="Calendar for {{ sidebar_month_name }} {{ sidebar_year }}">
+          <thead>
+            <tr>
+              {% for d in ['Su','Mo','Tu','We','Th','Fr','Sa'] %}
+              <th scope="col">{{ d }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for week in sidebar_weeks %}
+            <tr>
+              {% for day in week %}
+              <td>
+                {% if day == 0 %}
+                &nbsp;
+                {% elif day in sidebar_entry_days %}
+                <a href="{{ url_for('main.calendar_view', year=sidebar_year, month=sidebar_month) }}#day-{{ day }}"><strong>{{ day }}</strong></a>
+                {% else %}
+                {{ day }}
+                {% endif %}
+              </td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Tag list -->
+      {% if sidebar_tags %}
+      <div class="sidebar-section">
+        <div class="sidebar-header">Tags</div>
+        <div class="tag-list">
+          {% for tag, count in sidebar_tags.items() %}
+          <a href="{{ url_for('main.tag_view', tag=tag) }}" class="tag-link">{{ tag }}</a>{% if not loop.last %}, {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+    </aside>
+  </div><!-- #content-wrapper -->
+
+  <!-- ===== FOOTER ===== -->
+  <div id="footer">
+    <p>Powered by myplace-journal &mdash; a LiveJournal-inspired personal journal</p>
+  </div>
+
+</div><!-- #wrapper -->
+{% block scripts %}{% endblock %}
+</body>
+</html>

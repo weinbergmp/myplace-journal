@@ -1,0 +1,75 @@
+{% macro entry_card(entry, full_body=True) %}
+<article class="entry{% if entry.is_private %} entry-private{% endif %}" id="entry-{{ entry.id }}">
+
+  <div class="entry-header">
+    <span class="entry-date">
+      {% if entry.is_private %}<span class="lock-icon" title="Private">&#128274;</span> {% endif %}
+      <a href="{{ url_for('main.entry', entry_id=entry.id) }}">{{ lj_date(entry.created_at) }}</a>
+    </span>
+    {% if current_user.is_authenticated %}
+    <span class="entry-actions">
+      <a href="{{ url_for('main.edit', entry_id=entry.id) }}" class="entry-action-link">Edit</a>
+      <form method="post" action="{{ url_for('main.delete', entry_id=entry.id) }}"
+            class="inline-form" onsubmit="return confirm('Delete this entry? This cannot be undone.')">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn-link entry-action-link">Delete</button>
+      </form>
+    </span>
+    {% endif %}
+  </div>
+
+  {% if entry.subject %}
+  <div class="entry-subject">
+    {% if not full_body %}
+    <a href="{{ url_for('main.entry', entry_id=entry.id) }}">{{ entry.subject }}</a>
+    {% else %}
+    {{ entry.subject }}
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="entry-body">
+    {{ entry.body | markdown }}
+  </div>
+
+  {% if entry.mood or entry.current_music or entry.tag_list %}
+  <div class="entry-footer">
+    {%- set ns = namespace(sep=False) -%}
+    {%- if entry.mood -%}
+      mood: <em>{{ entry.mood }}</em>
+      {%- set ns.sep = True -%}
+    {%- endif -%}
+    {%- if entry.current_music -%}
+      {%- if ns.sep %} &nbsp;|&nbsp; {% endif -%}
+      music: <em>{{ entry.current_music }}</em>
+      {%- set ns.sep = True -%}
+    {%- endif -%}
+    {%- if entry.tag_list -%}
+      {%- if ns.sep %} &nbsp;|&nbsp; {% endif -%}
+      tags:
+      {%- for tag in entry.tag_list %}
+        <a href="{{ url_for('main.tag_view', tag=tag) }}">{{ tag }}</a>{%- if not loop.last %},{% endif -%}
+      {%- endfor -%}
+    {%- endif -%}
+  </div>
+  {% endif %}
+
+</article>
+{% endmacro %}
+
+
+{% macro pagination_nav(pagination, prev_url, next_url) %}
+{% if pagination.has_prev or pagination.has_next %}
+<div class="pagination">
+  {% if pagination.has_prev %}
+  <a href="{{ prev_url }}" class="pag-link">&laquo; Later entries</a>
+  {% endif %}
+  {% if pagination.has_prev and pagination.has_next %}
+  <span class="pag-sep">|</span>
+  {% endif %}
+  {% if pagination.has_next %}
+  <a href="{{ next_url }}" class="pag-link">Earlier entries &raquo;</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endmacro %}

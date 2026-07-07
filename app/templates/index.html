@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import entry_card, pagination_nav with context %}
+
+{% block title %}Recent Entries{% endblock %}
+
+{% block content %}
+<h2 class="page-heading">Recent Entries</h2>
+
+{% if pagination.items %}
+  {% for entry in pagination.items %}
+    {{ entry_card(entry, full_body=True) }}
+  {% endfor %}
+  {{ pagination_nav(pagination,
+      prev_url=url_for('main.index', page=pagination.prev_num),
+      next_url=url_for('main.index', page=pagination.next_num)) }}
+{% else %}
+  <div class="entry">
+    <div class="entry-body">
+      <p>No entries yet.
+        {% if current_user.is_authenticated %}
+        <a href="{{ url_for('main.write') }}">Write your first entry.</a>
+        {% endif %}
+      </p>
+    </div>
+  </div>
+{% endif %}
+{% endblock %}

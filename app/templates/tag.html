@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import entry_card, pagination_nav with context %}
+
+{% block title %}Tag: {{ tag }}{% endblock %}
+
+{% block content %}
+<h2 class="page-heading">Entries tagged &ldquo;{{ tag }}&rdquo;</h2>
+
+{% if pagination.items %}
+  {% for entry in pagination.items %}
+    {{ entry_card(entry, full_body=True) }}
+  {% endfor %}
+  {{ pagination_nav(pagination,
+      prev_url=url_for('main.tag_view', tag=tag, page=pagination.prev_num),
+      next_url=url_for('main.tag_view', tag=tag, page=pagination.next_num)) }}
+{% else %}
+  <div class="entry">
+    <div class="entry-body"><p>No entries found for tag &ldquo;{{ tag }}&rdquo;.</p></div>
+  </div>
+{% endif %}
+
+<p style="margin-top:10px;"><a href="{{ url_for('main.index') }}" class="pag-link">&laquo; Back to journal</a></p>
+{% endblock %}
