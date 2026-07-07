@@ -22,7 +22,7 @@ A personal journaling web app built with Python/Flask and deployable for free on
 ### 1. Clone and create a virtual environment
 
 ```bash
-git clone https://github.com/yourusername/myplace-journal.git
+git clone https://github.com/weinbergmp/myplace-journal.git
 cd myplace-journal
 python -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
